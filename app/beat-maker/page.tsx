@@ -1,4 +1,5 @@
 'use client';
+import { ST } from 'next/dist/shared/lib/utils';
 import React, { useState, useEffect } from 'react';
 
 const Step = (props:any) => {
@@ -27,15 +28,43 @@ const Kick = (props:any) => {
     )
 }
 
+const StartSequence = (props: any) => {
+    return(
+        <div>
+            <input type="button" className='bg-black w-52 h-48 text-slate-100' value="PLAY" onClick={() => {
+                props.setSequenceOn(!props.sequenceOn)
+                }} />
+        </div>
+    )
+}
+
+
+
 export default function BeatMaker(props:any) {
     
     const [inputs, setInputs] = useState<MIDIInputMap>();
+    const [sequenceStep, setSequenceStep] = useState<number>(0);
+    const [sequenceOn, setSequenceOn] = useState<boolean>(false);
+    const [audioFile, setAudioFile] = useState<any>(new Audio("/Kick.wav"));
 
     useEffect(() => {
         navigator.requestMIDIAccess().then((access) => {
             setInputs(access.inputs);
         });
     }, []);
+
+    useEffect(() => {
+        Sequence();
+    }, [sequenceOn]);
+
+    const Sequence = async () => {
+        if(sequenceOn) {
+            audioFile.play();
+            await new Promise(r => setTimeout(r, (30)));
+            setSequenceStep(sequenceStep+1)
+            Sequence();
+        }
+    }
 
     useEffect(() => {
         
@@ -55,12 +84,7 @@ export default function BeatMaker(props:any) {
                 hi
             </div>
             <Kick />
-            <br />
-            <Kick />
-            <br />
-            <Kick />
-            <br />
-            <Kick />
+            <StartSequence setSequenceOn={setSequenceOn} sequenceOn={sequenceOn} />
         </div>
     );
 }
