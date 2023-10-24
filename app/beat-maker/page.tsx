@@ -1,26 +1,35 @@
 'use client';
 import { ST } from 'next/dist/shared/lib/utils';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, forwardRef, createRef } from 'react';
 
-const Step = (props:any) => {
+const Step = forwardRef<any, any>((props, ref) => {
     const [active, setActive] = useState(false);
 
     useEffect(() => {
     }, [active]);
 
     return(
-        <div className="h-10 bg-stone-700 w-10 m-2 content-center hover:bg-stone-500" onClick={() => {setActive(!active)}}>
+        <div ref={ref} className="h-10 bg-stone-700 w-10 m-2 content-center hover:bg-stone-500" onClick={() => {setActive(!active)}}>
             <div className={`h-2 w-2 m-1 ${active ? "bg-green-500" : "bg-white"}`}/>
         </div>
     )
-}
+})
 
 const Kick = (props:any) => {
     var steps = [];
+    var stepRefs: React.RefObject<any>[] = [];
+    const [stepArray, setStepArray] = useState<any>([]);
 
     for (var i = 0; i < 16; i++) {
-        steps.push(<Step active={false} key={i} />);
+        let rootRef = createRef<any>();
+        steps.push(<Step ref={rootRef} active={false} key={i} />);
+        stepRefs.push(rootRef);
       }
+
+
+      setStepArray(stepRefs);
+
+
     return(
         <div className="h-14 w-screen flex">
             {steps}
@@ -46,6 +55,9 @@ export default function BeatMaker(props:any) {
     const [sequenceStep, setSequenceStep] = useState<number>(0);
     const [sequenceOn, setSequenceOn] = useState<boolean>(false);
     const [audioFile, setAudioFile] = useState<any>(new Audio("/Kick.wav"));
+    const [stepArray, setStepArray] = useState<any>([]);
+
+    const KickStateRef = createRef<any>(); 
 
     useEffect(() => {
         navigator.requestMIDIAccess().then((access) => {
@@ -61,10 +73,13 @@ export default function BeatMaker(props:any) {
         if(sequenceOn) {
             audioFile.play();
             await new Promise(r => setTimeout(r, (30)));
+            document.getElementById(""+ sequenceStep+1)
             setSequenceStep(sequenceStep+1)
+            
             Sequence();
         }
     }
+
 
     useEffect(() => {
         
@@ -83,7 +98,7 @@ export default function BeatMaker(props:any) {
             <div>
                 hi
             </div>
-            <Kick />
+            <Kick setStepArray={setStepArray} stepArray={stepArray} />
             <StartSequence setSequenceOn={setSequenceOn} sequenceOn={sequenceOn} />
         </div>
     );
