@@ -1,9 +1,8 @@
 'use client';
 import { ST } from 'next/dist/shared/lib/utils';
 import React, { useState, useEffect, useRef, forwardRef, createRef } from 'react';
+import MixedAudio from './mixedAudio'
 
-
-var stepRefs: React.RefObject<any>[] = [];
 
 const Step = forwardRef<any, any>((props, ref) => {
     const [active, setActive] = useState(false);
@@ -23,11 +22,10 @@ const Step = forwardRef<any, any>((props, ref) => {
     )
 })
 
-const Kick = (props:any) => {
+const BeatTrack = (props:any) => {
     var steps = [];
     //var stepRefs: React.RefObject<any>[] = [];
     const [stepArray, setStepArray] = useState<any>([]);
-    stepRefs = [];
 
     const updateStepArray = (i:number, isActive:boolean) => {
         var currentStepArray = props.stepArray;
@@ -70,7 +68,8 @@ export default function BeatMaker(props:any) {
     const [sequenceStep, setSequenceStep] = useState<number>(0);
     const [sequenceOn, setSequenceOn] = useState<boolean>(false);
     const [audioFile, setAudioFile] = useState<any>(new Audio("/Kick.wav"));
-    const [stepArray, setStepArray] = useState<boolean[]>([]);
+    const [kickStepArray, setkickStepArray] = useState<boolean[]>([]);
+    const [snareStepArray, setSnareStepArray] = useState<boolean[]>([]);
 
     const KickStateRef = createRef<any>(); 
 
@@ -85,15 +84,24 @@ export default function BeatMaker(props:any) {
     }, [sequenceOn, sequenceStep]);
 
     useEffect(() => {
-        console.log(stepArray);
-    }, [stepArray]);
+        console.log(kickStepArray);
+    }, [kickStepArray]);
 
     const Sequence = async () => {
         if(sequenceOn) {
-            if(stepArray[sequenceStep]) {
-                audioFile.play();
+            var audioArray = [];
+            if(kickStepArray[sequenceStep]) {
+                //audioFile.play();
+                audioArray.push("/Kick.wav")
             }
-            await new Promise(r => setTimeout(r, (500)));
+            if(snareStepArray[sequenceStep]) {
+                //audioFile.play();
+                audioArray.push("/Snare.wav")
+            }
+
+            MixedAudio(audioArray);
+
+            await new Promise(r => setTimeout(r, (100)));
             //document.getElementById(""+ sequenceStep+1)
             setSequenceStep((sequenceStep+1)%16)
             
@@ -119,7 +127,8 @@ export default function BeatMaker(props:any) {
             <div>
                 hi
             </div>
-            <Kick setStepArray={setStepArray} stepArray={stepArray} />
+            <BeatTrack setStepArray={setkickStepArray} stepArray={kickStepArray} />
+            <BeatTrack setStepArray={setSnareStepArray} stepArray={snareStepArray} />
             <StartSequence setSequenceOn={setSequenceOn} sequenceOn={sequenceOn} />
         </div>
     );

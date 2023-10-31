@@ -1,4 +1,6 @@
 import { useState, useRef } from "react";
+import MixedAudio from './mixedAudio'
+
 const AudioRecorder = () => {
     const [permission, setPermission] = useState(false);
     const [stream, setStream] = useState(null);
