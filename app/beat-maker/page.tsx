@@ -49,6 +49,17 @@ const BeatTrack = (props:any) => {
     )
 }
 
+const TempoControl = (props: any) => {
+    return(
+        <div>
+            <label>Tempo: ~{props.tempo}</label>
+            <input type="range" className='bg-black w-52 h-48 text-slate-100' min="60" max="180" onChange={(e) => {
+                props.setTempo(e.target.value);
+                }} />
+        </div>
+    )
+}
+
 const StartSequence = (props: any) => {
     return(
         <div>
@@ -75,6 +86,9 @@ export default function BeatMaker(props:any) {
     const [tomStepArray, setTomStepArray] = useState<boolean[]>([]);
     const [currentAudioNode, setCurrentAudioNode] = useState<AudioWorkletNode>();
     const [audioContext, setAudioContext] = useState<AudioContext>();
+    const [count, setCount] = useState<number>(0);
+    const [tempo, setTempo] = useState<number>(120);
+
 
     const KickStateRef = createRef<any>(); 
 
@@ -130,8 +144,10 @@ export default function BeatMaker(props:any) {
                 audioArray.push("./Tom.wav")
             }
             if(audioContext != undefined)
-                MixedAudio(audioArray, setCurrentAudioNode, audioContext);
-
+                MixedAudio(audioArray, setCurrentAudioNode, audioContext, tempo);
+                
+            console.log(count);
+            setCount(count + 1)
             //await new Promise(r => setTimeout(r, (100)));
             
 
@@ -220,6 +236,7 @@ export default function BeatMaker(props:any) {
             <div>
                 hi
             </div>
+            <TempoControl setTempo={setTempo} tempo={tempo} />
             <BeatTrack setStepArray={setkickStepArray} stepArray={kickStepArray} />
             <BeatTrack setStepArray={setSnareStepArray} stepArray={snareStepArray} />
             <BeatTrack setStepArray={setHiHatStepArray} stepArray={hiHatStepArray} />

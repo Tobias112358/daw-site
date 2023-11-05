@@ -1,8 +1,7 @@
-const MixedAudio = async (sources:string[], setCurrentAudioNode:any, audioContext:AudioContext) => {
+const MixedAudio = async (sources:string[], setCurrentAudioNode:any, audioContext:AudioContext, tempo:number) => {
 
-        //audioContext = new AudioContext();
-        console.log(audioContext.sampleRate);
-        console.log(audioContext);
+  
+        console.log(audioContext.currentTime);
 
         var sourceArrays: Float32Array[] = [];
         await Promise.all(sources.map(async (source:string) => {
@@ -22,7 +21,8 @@ const MixedAudio = async (sources:string[], setCurrentAudioNode:any, audioContex
                 someUsefulVariable: new Map<any, any>([
                     [1, "one"]
                 ]),
-                audioBuffers: sourceArrays
+                audioBuffers: sourceArrays,
+                tempo: tempo
             },
             outputChannelCount : [2]
     

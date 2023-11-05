@@ -4,6 +4,7 @@ class RecorderProcessor extends AudioWorkletProcessor {
 
         super();
 
+        this.tempo = options.processorOptions.tempo;
         this.samples = options.processorOptions.audioBuffers;
         this._bufferHead = 0;
         this.mixedSamples = [];
@@ -13,9 +14,9 @@ class RecorderProcessor extends AudioWorkletProcessor {
         };
       }
 
-      mixSamples() {
+      mixSamples(bufferLength) {
         var mix = [];
-        for(var i = 0; i<10000; i++) {
+        for(var i = 0; i<Math.ceil(bufferLength); i++) {
           mix[i] = 0;
           this.samples.forEach((sample) => {
             if(mix[i] >= 1.0) {
@@ -40,8 +41,11 @@ class RecorderProcessor extends AudioWorkletProcessor {
         const output = outputs[0];
         var channelIndex = 0;
           let absoluteSampleIndex = this._bufferHead
-          var x = 1;
-          this.mixSamples()
+          var x = (this.tempo/4)-120;
+          var y = Math.E/2.6;
+          var z = Math.pow(y, -x);
+          var w = 1+z;
+          this.mixSamples(w*128)
           for (let i = 0; i < output[0].length; i++) {
             outputs[0][0][i] = this.mixedSamples[absoluteSampleIndex] === undefined ? 0 : this.mixedSamples[absoluteSampleIndex];
             outputs[0][1][i] = this.mixedSamples[absoluteSampleIndex] === undefined ? 0 : this.mixedSamples[absoluteSampleIndex];
