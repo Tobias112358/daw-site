@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, forwardRef, createRef } from 'react
 import MixedAudio from './mixedAudio'
 
 
-const Step = forwardRef<any, any>((props, ref) => {
+const Step = (props:any) => {
     const [active, setActive] = useState(false);
 
     useEffect(() => {
@@ -16,11 +16,11 @@ const Step = forwardRef<any, any>((props, ref) => {
     }
 
     return(
-        <div ref={ref} className="h-10 bg-stone-700 w-10 m-2 content-center hover:bg-stone-500" onClick={handleClick}>
+        <div className="h-10 bg-stone-700 w-10 m-2 content-center hover:bg-stone-500" onClick={handleClick}>
             <div className={`h-2 w-2 m-1 ${active ? "bg-green-500" : "bg-white"}`}/>
         </div>
     )
-})
+}
 
 const BeatTrack = (props:any) => {
     var steps = [];
@@ -34,9 +34,8 @@ const BeatTrack = (props:any) => {
     }
 
     for (var i = 0; i < 16; i++) {
-        let rootRef = createRef<any>();
 
-        steps.push(<Step ref={rootRef} active={false} stepID={i} key={i} updateStepArray={updateStepArray} />);
+        steps.push(<Step active={false} stepID={i} key={i} updateStepArray={updateStepArray} />);
         
         //updateStepArray(i, false);
       }
@@ -53,8 +52,11 @@ const BeatTrack = (props:any) => {
 const StartSequence = (props: any) => {
     return(
         <div>
-            <input type="button" className='bg-black w-52 h-48 text-slate-100' value="PLAY" onClick={() => {
-                props.setSequenceOn(!props.sequenceOn)
+            <input type="button" className='bg-black w-52 h-48 text-slate-100' value="PLAY" onClick={async () => {
+
+                const myAudioContext = new AudioContext();
+                await myAudioContext.audioWorklet.addModule("/worklets/recorder.worklet.js")
+                props.setAudioContext(myAudioContext);
                 }} />
         </div>
     )
@@ -67,9 +69,12 @@ export default function BeatMaker(props:any) {
     const [inputs, setInputs] = useState<MIDIInputMap>();
     const [sequenceStep, setSequenceStep] = useState<number>(0);
     const [sequenceOn, setSequenceOn] = useState<boolean>(false);
-    const [audioFile, setAudioFile] = useState<any>(new Audio("/Kick.wav"));
     const [kickStepArray, setkickStepArray] = useState<boolean[]>([]);
     const [snareStepArray, setSnareStepArray] = useState<boolean[]>([]);
+    const [hiHatStepArray, setHiHatStepArray] = useState<boolean[]>([]);
+    const [tomStepArray, setTomStepArray] = useState<boolean[]>([]);
+    const [currentAudioNode, setCurrentAudioNode] = useState<AudioWorkletNode>();
+    const [audioContext, setAudioContext] = useState<AudioContext>();
 
     const KickStateRef = createRef<any>(); 
 
@@ -77,7 +82,12 @@ export default function BeatMaker(props:any) {
         navigator.requestMIDIAccess().then((access) => {
             setInputs(access.inputs);
         });
+
     }, []);
+    useEffect(() => {
+        if(audioContext != undefined)
+            setSequenceOn(!sequenceOn)
+    }, [audioContext]);
 
     useEffect(() => {
         Sequence();
@@ -87,24 +97,44 @@ export default function BeatMaker(props:any) {
         console.log(kickStepArray);
     }, [kickStepArray]);
 
+
+    useEffect(() => {
+        console.log(currentAudioNode);
+        if(currentAudioNode != undefined) {
+            currentAudioNode.port.onmessage = (e:any) => {
+                if(e.data.type == "WORKLET_ENDED"){
+                    currentAudioNode.disconnect();
+                    setSequenceStep((sequenceStep+1)%16);
+                }
+            }
+        }
+    }, [currentAudioNode]);
+
     const Sequence = async () => {
         if(sequenceOn) {
             var audioArray = [];
             if(kickStepArray[sequenceStep]) {
                 //audioFile.play();
-                audioArray.push("/Kick.wav")
+                audioArray.push("./Kick.wav")
             }
             if(snareStepArray[sequenceStep]) {
                 //audioFile.play();
-                audioArray.push("/Snare.wav")
+                audioArray.push("./Snare.wav")
             }
+            if(hiHatStepArray[sequenceStep]) {
+                //audioFile.play();
+                audioArray.push("./HiHat.wav")
+            }
+            if(tomStepArray[sequenceStep]) {
+                //audioFile.play();
+                audioArray.push("./Tom.wav")
+            }
+            if(audioContext != undefined)
+                MixedAudio(audioArray, setCurrentAudioNode, audioContext);
 
-            MixedAudio(audioArray);
-
-            await new Promise(r => setTimeout(r, (100)));
-            //document.getElementById(""+ sequenceStep+1)
-            setSequenceStep((sequenceStep+1)%16)
+            //await new Promise(r => setTimeout(r, (100)));
             
+
             //Sequence();
         }
     }
@@ -121,6 +151,69 @@ export default function BeatMaker(props:any) {
       }
     }, [inputs]);
 
+    /*const generalClick = (async () => {
+
+        const audioContext = new AudioContext();
+        console.log(audioContext.sampleRate);
+        console.log(audioContext);
+        await audioContext.audioWorklet.addModule("/worklets/recorder.worklet.js")
+
+
+        var snareFile = await fetch("/Snare.wav");
+        var snareBuffer = await snareFile.arrayBuffer();
+        var decodedSnare = await audioContext.decodeAudioData(snareBuffer);
+        const snareArray = new Float32Array(decodedSnare.length);
+        decodedSnare.copyFromChannel(snareArray, 0, 0);
+
+        var kickFile = await fetch("/Kick.wav");
+        var kickBuffer = await kickFile.arrayBuffer();
+        var decodedKick = await audioContext.decodeAudioData(kickBuffer);
+        const kickArray = new Float32Array(decodedKick.length);
+        decodedKick.copyFromChannel(kickArray, 0, 0);
+
+        var tomFile = await fetch("/Tom.wav");
+        var tomBuffer = await tomFile.arrayBuffer();
+        var decodedTom = await audioContext.decodeAudioData(tomBuffer);
+        const tomArray = new Float32Array(decodedTom.length);
+        decodedTom.copyFromChannel(tomArray, 0, 0);
+
+        var hiHatFile = await fetch("/HiHat.wav");
+        var hiHatBuffer = await hiHatFile.arrayBuffer();
+        var decodedHiHat = await audioContext.decodeAudioData(hiHatBuffer);
+        const hiHatArray = new Float32Array(decodedHiHat.length);
+        decodedHiHat.copyFromChannel(hiHatArray, 0, 0);
+
+
+        
+        const testNode = new window.AudioWorkletNode(audioContext, "recorder.worklet", {
+            processorOptions: {
+                someUsefulVariable: new Map<any, any>([
+                    [1, "one"]
+                ]),
+                audioBuffers: [tomArray, hiHatArray, kickArray, snareArray]
+            },
+            outputChannelCount : [2]
+    
+        });
+
+        if(testNode != null) {
+            testNode.onprocessorerror = (e:any) => {
+                console.log("HERE");
+            };
+        }
+        
+        setInterval(() => testNode.port.postMessage("ping"), 1000);
+        
+        testNode.port.onmessage = (e:any) => {
+            if(e.data.type == "WORKLET_ENDED") {
+                testNode.disconnect();
+                setSequenceStep((sequenceStep+1)%16);
+            }
+        }
+
+        testNode.connect(audioContext.destination);
+    });*/
+
 
     return(
         <div className="h-screen justify-center content-center text-center pt-32 text-3xl grid grid-flow-row">
@@ -129,7 +222,12 @@ export default function BeatMaker(props:any) {
             </div>
             <BeatTrack setStepArray={setkickStepArray} stepArray={kickStepArray} />
             <BeatTrack setStepArray={setSnareStepArray} stepArray={snareStepArray} />
-            <StartSequence setSequenceOn={setSequenceOn} sequenceOn={sequenceOn} />
+            <BeatTrack setStepArray={setHiHatStepArray} stepArray={hiHatStepArray} />
+            <BeatTrack setStepArray={setTomStepArray} stepArray={tomStepArray} />
+            <StartSequence setSequenceOn={setSequenceOn} sequenceOn={sequenceOn} setAudioContext={setAudioContext} />
+            {/*
+            <input type="button" value="CLICKHERE" onClick={generalClick} />
+            */}
         </div>
     );
 }
