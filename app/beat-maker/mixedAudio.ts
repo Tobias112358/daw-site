@@ -22,7 +22,8 @@ const MixedAudio = async (sources:string[], setCurrentAudioNode:any, audioContex
                     [1, "one"]
                 ]),
                 audioBuffers: sourceArrays,
-                tempo: tempo
+                tempo: tempo,
+                startTime: audioContext.currentTime
             },
             outputChannelCount : [2]
     

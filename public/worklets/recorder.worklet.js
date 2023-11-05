@@ -4,6 +4,7 @@ class RecorderProcessor extends AudioWorkletProcessor {
 
         super();
 
+        this.startTime = options.processorOptions.startTime;
         this.tempo = options.processorOptions.tempo;
         this.samples = options.processorOptions.audioBuffers;
         this._bufferHead = 0;
@@ -45,7 +46,7 @@ class RecorderProcessor extends AudioWorkletProcessor {
           var y = Math.E/2.6;
           var z = Math.pow(y, -x);
           var w = 1+z;
-          this.mixSamples(w*128)
+          this.mixSamples(40000)
           for (let i = 0; i < output[0].length; i++) {
             outputs[0][0][i] = this.mixedSamples[absoluteSampleIndex] === undefined ? 0 : this.mixedSamples[absoluteSampleIndex];
             outputs[0][1][i] = this.mixedSamples[absoluteSampleIndex] === undefined ? 0 : this.mixedSamples[absoluteSampleIndex];
@@ -58,6 +59,14 @@ class RecorderProcessor extends AudioWorkletProcessor {
           type: 'BUFFER_ENDED',
           bufferHead: this._bufferHead
         });
+
+        var endTime = this.startTime + (60/this.tempo)/4
+        if(currentTime >= endTime) {
+          this.port.postMessage({
+            type: 'WORKLET_ENDED'
+          });
+          return false;
+        }
 
         if(this._bufferHead >= this.mixedSamples.length) {
           this.port.postMessage({
